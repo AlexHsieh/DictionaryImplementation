@@ -4,5 +4,6 @@
         <page name='ChainingImplementation'/>
         <page name='InterviewImplementation'/>
         <page name='OpenAddressingImplementation'/>
+        <page name='AnyKeyImplementation'/>
     </pages>
 </playground>
