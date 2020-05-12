@@ -4,7 +4,7 @@
  - Key can be struct. value can be anything
  - Use array to store dictionary structure
  - Conflict resolution use chaining
- 
+ - Implement For loop
  */
 
 import Foundation
@@ -13,25 +13,23 @@ struct MyDictionary<Key: Hashable, Value> {
     
     class DictStructure {
         let key: Key
-        var value: Value?
+        var value: Value
         var next: DictStructure?
         
-        init(key: Key, value: Value?) {
+        init(key: Key, value: Value) {
             self.key = key
             self.value = value
         }
     }
     
-    private var storageSize: Int = {
-        return 5
-    }()
+    private let storageSize: Int = 5
     
-    lazy fileprivate var storage: [DictStructure?] = {
-        return Array(repeating: nil, count: storageSize) as [DictStructure?]
-    }()
-    
-    fileprivate var index: Int = 0
-    
+    fileprivate var storage: [DictStructure?]
+
+    init() {
+        storage = Array(repeating: nil, count: storageSize)
+    }
+        
     private func index(from key: Key) -> Int {
         return abs(key.hashValue) % storageSize
     }
@@ -74,7 +72,7 @@ struct MyDictionary<Key: Hashable, Value> {
         return value
     }
     
-    mutating func set(key: Key, value: Value?) {
+    mutating func set(key: Key, value: Value) {
         print("set \(key): \(value)")
         let idx = index(from: key)
         if let dict = object(from: idx, with: key) {
@@ -109,6 +107,7 @@ struct MyDictionary<Key: Hashable, Value> {
 
 extension MyDictionary: ExpressibleByDictionaryLiteral {
     init(dictionaryLiteral elements: (Key, Value)...) {
+        self.init()
         for (key, value) in elements {
             set(key: key, value: value)
         }
@@ -121,9 +120,45 @@ extension MyDictionary {
             return get(key: key)
         }
         mutating set(newValue) {
-            set(key: key, value: newValue)
+            if let x = newValue {
+                set(key: key, value: x)
+            } else {
+                delete(key: key)
+            }
         }
     }
+}
+
+extension MyDictionary: Sequence {
+    
+    func makeIterator() -> Iterator {
+        return Iterator(storage)
+    }
+    
+    struct Iterator: IteratorProtocol {
+        var array: [(Key, Value?)] = []
+        var index = 0
+        
+        init(_ storage: [DictStructure?]) {
+            for dictionary in storage {
+                var d = dictionary
+                while d != nil {
+                    array.append((d!.key, d!.value))
+                    d = d!.next
+                }
+            }
+        }
+
+        mutating func next() -> (Key, Value?)? {
+            if index < array.count {
+                let kv = array[index]
+                index += 1
+                return kv
+            }
+            return nil
+        }
+    }
+    
 }
 
 
@@ -147,6 +182,8 @@ dict["1"]
 print()
 
 // nil test
+dict = ["1": nil]
+dict["1"]
 dict["1"] = nil
 dict["1"]
 print()
@@ -163,9 +200,7 @@ print()
 dict.delete(key: "1")
 dict.delete(key: "2")
 dict.delete(key: "3")
-dict.delete(key: "4")
-dict["3"]
-dict["4"]
-dict["5"]
-dict["6"]
 
+for (key, value) in dict {
+    print("Key: \(key) with Value:\(String(describing: value))")
+}
